@@ -19,27 +19,40 @@
 
 #pragma once
 
-#include <cstdint>
+#include <stdbool.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#define PSIJENT_RESULT_OK 0
-#define PSIJENT_RESULT_HW_TIMEKEEPER_UNSUPPORTED (-61)
-#define PSIJENT_RESULT_ERROR_NOT_RUNNING (-36)
-#define PSIJENT_RESULT_INTERRUPTED (-92)
-#define PSIJENT_RESULT_ERROR_UNEXPECTED (-1)
-
 typedef struct psijent psijent;
 
 int psijent_init(psijent** p);
+
 void psijent_free(psijent* p);
-int psijent_start(psijent* p);
-int psijent_stop(psijent* p);
-int psijent_randbits(psijent* p, uint8_t* dest, int length);
-int psijent_randbytes(psijent* p, uint8_t* dest, int length);
-int psijent_randuniform(psijent* p, double* dest, int length, int mantissa_length);
+
+void psijent_raw_deltas(psijent* p, uint64_t* dest, int length);
+
+double psijent_estimate_min_entropy_per_bit(psijent* p, int sample_size);
+
+void psijent_randbits_unpacked(
+    psijent* p,
+    uint8_t* dest,
+    int length,
+    bool decorrelate_with_lfsr,
+    bool mask_with_prng,
+    int bias_amplification_level
+);
+
+void psijent_randbytes(
+    psijent* p,
+    uint8_t* dest,
+    int length,
+    bool decorrelate_with_lfsr,
+    bool mask_with_prng,
+    int bit_bias_amplification_level
+);
 
 #ifdef __cplusplus
 }

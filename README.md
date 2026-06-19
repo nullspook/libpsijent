@@ -1,28 +1,82 @@
 libpsijent
 ==========
 
-A postprocessing-free high-quality RNG based on memory access time variations measured using low-level CPU cycle clock.
+A postprocessing-free* jitter-based true random number generator (TRNG) designed for psi experiments.
+
+\* Postprocessing available as optional features.
+
+Optional features
+-----------------
+
+- **LFSR-based decorrelation** `decorrelate_with_lfsr`
+
+  Reference: https://forum.mindmatterinteraction.net/t/increasing-mmi-effect-size-by-lfsr-processing-of-mmi-bits/96/5
+
+- **XOR-masking with PRNG** `mask_with_prng`
+
+  Reference: https://web.archive.org/web/20260311072125/https://noosphere.princeton.edu/reg.html
+
+- **Random walk bias amplification** `bias_amplification_level`
+  _(applied **after** decorrelation and masking if they are enabled)_
+
+  Reference: https://forum.mindmatterinteraction.net/t/caution-high-entropy-zone/82/6
 
 NIST SP 800-22 Result
 ---------------------
 
-#### Windows 10 (Ryzen 7 2700X)
+**Mac mini M4 Pro *(no postprocessing)***
 
-![Windows NIST SP 800-22 result](nist_sts_result/windows.jpg)
+![NIST SP 800-22 result](finalAnalysisReport.jpg)
 
-#### Debian 13 (i7-8559U)
+Install
+-------
 
-![Debian NIST SP 800-22 result](nist_sts_result/debian.jpg)
+```bash
+mkdir build
+cd build
+cmake ..
+make
+sudo make install
+```
 
-#### Android 11 (Snapdragon 765G)
+Usage
+-----
 
-![Android NIST SP 800-22 result](nist_sts_result/android.jpg)
+```c
+#include <stdio.h>
+#include <stdint.h>
+#include <stdbool.h>
 
-#### macOS Sequoia (M4 Pro)
+#include <psijent.h>
 
-`-DPSIJENT_MEM_SIZE=268435456 -DPSIJENT_MEM_LOC_MASK=268435455 -DPSIJENT_MEM_MIN_JMP_DIST=117440512 -DPSIJENT_MEM_RAND_JMP_MASK=16777215`
+int main(void)
+{
+    psijent *p;
 
-![macOS NIST SP 800-22 result](nist_sts_result/mac.jpg)
+    if (psijent_init(&p) != 0) {
+        return 1;
+    }
+
+    uint8_t buffer[16];
+
+    psijent_randbytes(
+        p,
+        buffer,
+        16,
+        false,  // decorrelate_with_lfsr
+        true,   // mask_with_prng
+        0       // bit_bias_amplification_level
+    );
+
+    for (int i = 0; i < 16; i++) {
+        printf("%02X ", buffer[i]);
+    }
+
+    psijent_free(p);
+
+    return 0;
+}
+```
 
 License
 -------

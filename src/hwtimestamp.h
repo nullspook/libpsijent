@@ -20,7 +20,7 @@
 
 #pragma once
 
-#include <cstdint>
+#include <stdint.h>
 
 #if defined(_MSC_VER) && (defined(_M_IX86) || defined(_M_X64))
 #include <intrin.h>
@@ -38,38 +38,38 @@ __forceinline
 #else
 __attribute__((always_inline))
 #endif
-void read_hw_timestamp_start(uint64_t& out)
+void read_hw_timestamp_start(uint64_t* out)
 {
 #if (defined(__GNUC__) || defined(__clang__)) && (defined(__x86_64__) || defined(__amd64__))
 #if !defined(__clang_major__) || __clang_major__ >= 11
-    asm volatile inline(
+    __asm__ volatile inline(
 #else
-    asm volatile(
+    __asm__ volatile(
 #endif
         "lfence\n\t"
         "rdtsc\n\t"
         "shl $32, %%rdx\n\t"
         "or %%rdx, %0\n\t"
         "lfence"
-        : "=a"(out)
+        : "=a"(*out)
         :
         : "rdx", "memory", "cc");
 #elif (defined(__GNUC__) || defined(__clang__)) && defined(__aarch64__)
 #if !defined(__clang_major__) || __clang_major__ >= 11
-    asm volatile inline(
+    __asm__ volatile inline(
 #else
-    asm volatile(
+    __asm__ volatile(
 #endif
         "isb\n\t"
         "mrs %0, cntvct_el0"
-        : "=r"(out)
+        : "=r"(*out)
         :
         : "memory");
 #elif defined(_MSC_VER) && (defined(_M_IX86) || defined(_M_X64))
     _ReadWriteBarrier();
     _mm_lfence();
     _ReadWriteBarrier();
-    out = __rdtsc();
+    *out = __rdtsc();
     _ReadWriteBarrier();
     _mm_lfence();
     _ReadWriteBarrier();
@@ -84,37 +84,37 @@ __forceinline
 #else
 __attribute__((always_inline))
 #endif
-void read_hw_timestamp_end(uint64_t& out, uint32_t& aux)
+void read_hw_timestamp_end(uint64_t* out, uint32_t* aux)
 {
 #if (defined(__GNUC__) || defined(__clang__)) && (defined(__x86_64__) || defined(__amd64__))
 #if !defined(__clang_major__) || __clang_major__ >= 11
-    asm volatile inline(
+    __asm__ volatile inline(
 #else
-    asm volatile(
+    __asm__ volatile(
 #endif
         "rdtscp\n\t"
         "shl $32, %%rdx\n\t"
         "or %%rdx, %0\n\t"
         "lfence"
-        : "=a"(out)
+        : "=a"(*out)
         :
         : "rcx", "rdx", "memory", "cc");
-    aux = 0;
+    *aux = 0;
 #elif (defined(__GNUC__) || defined(__clang__)) && defined(__aarch64__)
 #if !defined(__clang_major__) || __clang_major__ >= 11
-    asm volatile inline(
+    __asm__ volatile inline(
 #else
-    asm volatile(
+    __asm__ volatile(
 #endif
         "isb\n\t"
         "mrs %0, cntvct_el0"
-        : "=r"(out)
+        : "=r"(*out)
         :
         : "memory");
-    aux = 0;
+    *aux = 0;
 #elif defined(_MSC_VER) && (defined(_M_IX86) || defined(_M_X64))
     _ReadWriteBarrier();
-    out = __rdtscp(&aux);
+    *out = __rdtscp(aux);
     _ReadWriteBarrier();
     _mm_lfence();
     _ReadWriteBarrier();
